@@ -1,101 +1,129 @@
-import { useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Download } from 'lucide-react';
-
-const callHistory = [
-  { time: '10:45', from: '+1 (555) 123-4567', to: '+1 (555) 987-6543', agent: 'John', type: 'Dohodni', duration: '3m 24s', status: 'ODGOVORJEN' },
-  { time: '10:42', from: '+1 (555) 234-5678', to: '+1 (555) 876-5432', agent: 'Sarah', type: 'Odhodni', duration: '1m 52s', status: 'ODGOVORJEN' },
-  { time: '10:38', from: '+1 (555) 345-6789', to: '+1 (555) 765-4321', agent: 'Mike', type: 'Dohodni', duration: '0m 0s', status: 'ZAMUJEN' },
-  { time: '10:35', from: '+1 (555) 456-7890', to: '+1 (555) 654-3210', agent: 'Anna', type: 'Dohodni', duration: '5m 18s', status: 'ODGOVORJEN' },
-  { time: '10:30', from: '+1 (555) 567-8901', to: '+1 (555) 543-2109', agent: 'Peter', type: 'Interni', duration: '2m 05s', status: 'ODGOVORJEN' },
-  { time: '10:28', from: '+1 (555) 678-9012', to: '+1 (555) 432-1098', agent: 'John', type: 'Dohodni', duration: '0m 0s', status: 'NI ODGOVORA' },
-  { time: '10:25', from: '+1 (555) 789-0123', to: '+1 (555) 321-0987', agent: 'Sarah', type: 'Odhodni', duration: '4m 42s', status: 'ODGOVORJEN' },
-  { time: '10:20', from: '+1 (555) 890-1234', to: '+1 (555) 210-9876', agent: 'Mike', type: 'Dohodni', duration: '2m 33s', status: 'ODGOVORJEN' },
-  { time: '10:15', from: '+1 (555) 901-2345', to: '+1 (555) 109-8765', agent: 'Anna', type: 'Dohodni', duration: '6m 12s', status: 'ODGOVORJEN' },
-  { time: '10:10', from: '+1 (555) 012-3456', to: '+1 (555) 098-7654', agent: 'Peter', type: 'Odhodni', duration: '1m 28s', status: 'ODGOVORJEN' },
-];
+import { useState, useEffect } from 'react';
+import { ChevronDown, Download } from 'lucide-react';
+import { getCallHistory, getAgentList, type CallHistoryResult } from '../lib/api';
 
 export default function CallHistory() {
-  const [dateFilter, setDateFilter] = useState('Danes');
-  const [agentFilter, setAgentFilter] = useState('Vsi agenti');
-  const [typeFilter, setTypeFilter] = useState('Vsi tipi');
-  const [statusFilter, setStatusFilter] = useState('Vsi statusi');
+  const [agents, setAgents] = useState<string[]>([]);
+  const [data, setData] = useState<CallHistoryResult | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    date: 'today',
+    agent: 'all',
+    type: 'all',
+    status: 'all',
+    page: 1,
+  });
 
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      ODGOVORJEN: 'bg-green-500/20 text-green-400 border border-green-500/30',
-      ZAMUJEN: 'bg-red-500/20 text-red-400 border border-red-500/30',
-      'NI ODGOVORA': 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30',
-    };
-    return styles[status as keyof typeof styles] || 'bg-gray-500/20 text-gray-400';
+  useEffect(() => {
+    async function loadAgents() {
+      try {
+        const agentList = await getAgentList();
+        setAgents(agentList);
+      } catch (error) {
+        console.error('Napaka pri nalaganju agentov:', error);
+      }
+    }
+    loadAgents();
+  }, []);
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const result = await getCallHistory(filters);
+        setData(result);
+      } catch (error) {
+        console.error('Napaka pri nalaganju podatkov:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [filters]);
+
+  const updateFilter = (key: string, value: string | number) => {
+    setFilters(prev => ({ ...prev, [key]: value, page: key === 'page' ? value : 1 }));
   };
+
+  const getStatusColor = (status: string) => {
+    if (status === 'ODGOVORJEN') return 'text-green-400';
+    if (status === 'NI ODGOVORA') return 'text-red-400';
+    if (status === 'ZASEDEN') return 'text-yellow-400';
+    return 'text-gray-400';
+  };
+
+  if (loading && !data) {
+    return (
+      <div className="p-6 flex items-center justify-center h-full">
+        <div className="text-white text-lg">Nalaganje podatkov...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
       <div className="mb-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold text-white">Zgodovina klicev</h1>
-          <button className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 text-sm rounded hover:bg-blue-700 transition-colors">
-            <Download size={14} />
-            Izvozi
+          <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors">
+            <Download size={16} />
+            Izvozi CSV
           </button>
         </div>
 
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-4 flex-wrap">
           <div className="relative">
             <select
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
+              value={filters.date}
+              onChange={(e) => updateFilter('date', e.target.value)}
               className="appearance-none bg-[#111217] border border-[#2a2c36] text-white rounded px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option>Danes</option>
-              <option>Včeraj</option>
-              <option>Zadnjih 7 dni</option>
-              <option>Zadnjih 30 dni</option>
-              <option>Obdobje po meri</option>
+              <option value="today">Danes</option>
+              <option value="yesterday">Včeraj</option>
+              <option value="last7days">Zadnjih 7 dni</option>
+              <option value="last30days">Zadnjih 30 dni</option>
             </select>
             <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
           </div>
 
           <div className="relative">
             <select
-              value={agentFilter}
-              onChange={(e) => setAgentFilter(e.target.value)}
+              value={filters.agent}
+              onChange={(e) => updateFilter('agent', e.target.value)}
               className="appearance-none bg-[#111217] border border-[#2a2c36] text-white rounded px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option>Vsi agenti</option>
-              <option>John</option>
-              <option>Sarah</option>
-              <option>Mike</option>
-              <option>Anna</option>
-              <option>Peter</option>
+              <option value="all">Vsi agenti</option>
+              {agents.map(agent => (
+                <option key={agent} value={agent}>{agent}</option>
+              ))}
             </select>
             <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
           </div>
 
           <div className="relative">
             <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
+              value={filters.type}
+              onChange={(e) => updateFilter('type', e.target.value)}
               className="appearance-none bg-[#111217] border border-[#2a2c36] text-white rounded px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option>Vsi tipi</option>
-              <option>Dohodni</option>
-              <option>Odhodni</option>
-              <option>Interni</option>
+              <option value="all">Vsi tipi</option>
+              <option value="Dohodni">Dohodni</option>
+              <option value="Odhodni">Odhodni</option>
+              <option value="Interni">Interni</option>
             </select>
             <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
           </div>
 
           <div className="relative">
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={filters.status}
+              onChange={(e) => updateFilter('status', e.target.value)}
               className="appearance-none bg-[#111217] border border-[#2a2c36] text-white rounded px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option>Vsi statusi</option>
-              <option>Odgovorjeni</option>
-              <option>Zamujeni</option>
-              <option>Ni odgovora</option>
+              <option value="all">Vsi statusi</option>
+              <option value="ODGOVORJEN">Odgovorjen</option>
+              <option value="NI ODGOVORA">Ni odgovora</option>
+              <option value="ZAMUJEN">Zamujen</option>
             </select>
             <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
           </div>
@@ -117,41 +145,63 @@ export default function CallHistory() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#2a2c36]">
-              {callHistory.map((call, index) => (
-                <tr key={index} className="hover:bg-[#1a1c23] transition-colors">
-                  <td className="px-5 py-3 whitespace-nowrap text-sm text-white">{call.time}</td>
-                  <td className="px-5 py-3 whitespace-nowrap text-sm text-gray-400">{call.from}</td>
-                  <td className="px-5 py-3 whitespace-nowrap text-sm text-gray-400">{call.to}</td>
-                  <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-white">{call.agent}</td>
-                  <td className="px-5 py-3 whitespace-nowrap text-sm text-gray-400">{call.type}</td>
-                  <td className="px-5 py-3 whitespace-nowrap text-sm text-gray-400">{call.duration}</td>
-                  <td className="px-5 py-3 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded ${getStatusBadge(call.status)}`}>
-                      {call.status}
-                    </span>
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-5 py-8 text-center text-gray-400">
+                    Nalaganje...
                   </td>
                 </tr>
-              ))}
+              ) : data?.records.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-5 py-8 text-center text-gray-400">
+                    Ni podatkov za prikaz
+                  </td>
+                </tr>
+              ) : (
+                data?.records.map((record, index) => (
+                  <tr key={index} className="hover:bg-[#1a1c23] transition-colors">
+                    <td className="px-5 py-3 whitespace-nowrap text-sm text-white">{record.cas}</td>
+                    <td className="px-5 py-3 whitespace-nowrap text-sm text-gray-400">{record.od}</td>
+                    <td className="px-5 py-3 whitespace-nowrap text-sm text-gray-400">{record.za}</td>
+                    <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-white">{record.agent}</td>
+                    <td className="px-5 py-3 whitespace-nowrap text-sm text-gray-400">{record.tip}</td>
+                    <td className="px-5 py-3 whitespace-nowrap text-sm text-gray-400">{record.trajanje}</td>
+                    <td className="px-5 py-3 whitespace-nowrap text-sm">
+                      <span className={getStatusColor(record.status)}>{record.status}</span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
-        <div className="px-5 py-3 border-t border-[#2a2c36] flex items-center justify-between">
-          <div className="text-sm text-gray-400">
-            Prikazujem 1 do 10 od 127 klicev
+        {data && data.total > 0 && (
+          <div className="px-5 py-4 border-t border-[#2a2c36] flex items-center justify-between">
+            <div className="text-sm text-gray-400">
+              Prikazujem {((filters.page - 1) * 10) + 1} do {Math.min(filters.page * 10, data.total)} od {data.total} klicev
+            </div>
+            <div className="flex gap-2">
+              <button
+                disabled={filters.page === 1}
+                onClick={() => updateFilter('page', filters.page - 1)}
+                className="px-3 py-1 bg-[#1a1c23] border border-[#2a2c36] text-white rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#2a2c36] transition-colors"
+              >
+                Prejšnja
+              </button>
+              <span className="px-3 py-1 text-sm text-gray-400">
+                Stran {filters.page} od {data.totalPages}
+              </span>
+              <button
+                disabled={filters.page >= data.totalPages}
+                onClick={() => updateFilter('page', filters.page + 1)}
+                className="px-3 py-1 bg-[#1a1c23] border border-[#2a2c36] text-white rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#2a2c36] transition-colors"
+              >
+                Naslednja
+              </button>
+            </div>
           </div>
-          <div className="flex gap-1">
-            <button className="px-2 py-1 border border-[#2a2c36] text-gray-400 rounded hover:bg-[#1a1c23] disabled:opacity-50 disabled:cursor-not-allowed">
-              <ChevronLeft size={16} />
-            </button>
-            <button className="px-3 py-1 bg-blue-600 text-white text-sm rounded">1</button>
-            <button className="px-3 py-1 border border-[#2a2c36] text-gray-400 text-sm rounded hover:bg-[#1a1c23]">2</button>
-            <button className="px-3 py-1 border border-[#2a2c36] text-gray-400 text-sm rounded hover:bg-[#1a1c23]">3</button>
-            <button className="px-2 py-1 border border-[#2a2c36] text-gray-400 rounded hover:bg-[#1a1c23]">
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
