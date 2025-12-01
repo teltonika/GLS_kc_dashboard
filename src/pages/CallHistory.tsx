@@ -7,12 +7,22 @@ export default function CallHistory() {
   const [data, setData] = useState<CallHistoryResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    date: 'today',
+    date: '2025-12-01',
     agent: 'all',
     type: 'all',
     status: 'all',
     page: 1,
   });
+
+  const getMinDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date.toISOString().split('T')[0];
+  };
+
+  const getMaxDate = () => {
+    return new Date().toISOString().split('T')[0];
+  };
 
   useEffect(() => {
     async function loadAgents() {
@@ -72,18 +82,15 @@ export default function CallHistory() {
         </div>
 
         <div className="flex gap-4 flex-wrap">
-          <div className="relative">
-            <select
+          <div>
+            <input
+              type="date"
               value={filters.date}
+              min={getMinDate()}
+              max={getMaxDate()}
               onChange={(e) => updateFilter('date', e.target.value)}
-              className="appearance-none bg-[#111217] border border-[#2a2c36] text-white rounded px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="today">Danes</option>
-              <option value="yesterday">Včeraj</option>
-              <option value="last7days">Zadnjih 7 dni</option>
-              <option value="last30days">Zadnjih 30 dni</option>
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
+              className="bg-[#111217] border border-[#2a2c36] text-white rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
           </div>
 
           <div className="relative">

@@ -47,6 +47,14 @@ function getDateRange(period: string): { start: string; end: string } {
   const now = new Date()
   const today = now.toISOString().split('T')[0]
 
+  // If period is a date string (YYYY-MM-DD), use it directly
+  if (/^\d{4}-\d{2}-\d{2}$/.test(period)) {
+    return {
+      start: `${period}T00:00:00`,
+      end: `${period}T23:59:59`
+    }
+  }
+
   switch (period) {
     case 'today':
       return { start: `${today}T00:00:00`, end: `${today}T23:59:59` }

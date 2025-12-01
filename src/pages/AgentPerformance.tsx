@@ -16,13 +16,23 @@ import {
 
 export default function AgentPerformance() {
   const [selectedAgent, setSelectedAgent] = useState('all');
-  const [dateRange, setDateRange] = useState('last7days');
+  const [selectedDate, setSelectedDate] = useState('2025-12-01');
   const [agents, setAgents] = useState<string[]>([]);
   const [stats, setStats] = useState<PerformanceStats | null>(null);
   const [volumeData, setVolumeData] = useState<DailyVolumeData[]>([]);
   const [metrics, setMetrics] = useState<EfficiencyMetrics | null>(null);
   const [breakdown, setBreakdown] = useState<DailyBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const getMinDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date.toISOString().split('T')[0];
+  };
+
+  const getMaxDate = () => {
+    return new Date().toISOString().split('T')[0];
+  };
 
   useEffect(() => {
     async function loadAgents() {
@@ -41,10 +51,10 @@ export default function AgentPerformance() {
       setLoading(true);
       try {
         const [statsData, volume, metricsData, breakdownData] = await Promise.all([
-          getPerformanceStats(dateRange, selectedAgent),
-          getDailyVolume(dateRange, selectedAgent),
-          getEfficiencyMetrics(dateRange, selectedAgent),
-          getDailyBreakdown(dateRange, selectedAgent),
+          getPerformanceStats(selectedDate, selectedAgent),
+          getDailyVolume(selectedDate, selectedAgent),
+          getEfficiencyMetrics(selectedDate, selectedAgent),
+          getDailyBreakdown(selectedDate, selectedAgent),
         ]);
         setStats(statsData);
         setVolumeData(volume);
@@ -57,7 +67,7 @@ export default function AgentPerformance() {
       }
     }
     loadData();
-  }, [selectedAgent, dateRange]);
+  }, [selectedAgent, selectedDate]);
 
   if (loading) {
     return (
@@ -95,18 +105,15 @@ export default function AgentPerformance() {
             <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
           </div>
 
-          <div className="relative">
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="appearance-none bg-[#111217] border border-[#2a2c36] text-white rounded px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="today">Danes</option>
-              <option value="yesterday">Včeraj</option>
-              <option value="last7days">Zadnjih 7 dni</option>
-              <option value="last30days">Zadnjih 30 dni</option>
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
+          <div>
+            <input
+              type="date"
+              value={selectedDate}
+              min={getMinDate()}
+              max={getMaxDate()}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-[#111217] border border-[#2a2c36] text-white rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
           </div>
         </div>
       </div>

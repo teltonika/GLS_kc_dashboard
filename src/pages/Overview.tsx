@@ -20,22 +20,37 @@ export default function Overview() {
   const [responseData, setResponseData] = useState<ResponseTimeData[]>([]);
   const [agentData, setAgentData] = useState<AgentStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState('2025-12-01');
 
-  const today = new Date().toLocaleDateString('sl-SI', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
+  const getMinDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date.toISOString().split('T')[0];
+  };
+
+  const getMaxDate = () => {
+    return new Date().toISOString().split('T')[0];
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString + 'T00:00:00');
+    return date.toLocaleDateString('sl-SI', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
   useEffect(() => {
     async function loadData() {
+      setLoading(true);
       try {
         const [statsData, hourly, response, agents] = await Promise.all([
-          getOverviewStats('today'),
-          getCallsByHour('today'),
-          getResponseTimeTrend('today'),
-          getAgentStats('today'),
+          getOverviewStats(selectedDate),
+          getCallsByHour(selectedDate),
+          getResponseTimeTrend(selectedDate),
+          getAgentStats(selectedDate),
         ]);
         setStats(statsData);
         setHourlyData(hourly);
@@ -48,7 +63,7 @@ export default function Overview() {
       }
     }
     loadData();
-  }, []);
+  }, [selectedDate]);
 
   if (loading) {
     return (
@@ -69,8 +84,22 @@ export default function Overview() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-white mb-1">Nadzorna plošča klicnega centra</h1>
-        <p className="text-sm text-gray-400">{today}</p>
+        <div className="flex justify-between items-center mb-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-white mb-1">Nadzorna plošča klicnega centra</h1>
+            <p className="text-sm text-gray-400">{formatDate(selectedDate)}</p>
+          </div>
+          <div>
+            <input
+              type="date"
+              value={selectedDate}
+              min={getMinDate()}
+              max={getMaxDate()}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-[#111217] border border-[#2a2c36] text-white rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-4 mb-6">
