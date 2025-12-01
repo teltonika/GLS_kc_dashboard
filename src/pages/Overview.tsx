@@ -23,13 +23,11 @@ export default function Overview() {
   const [selectedDate, setSelectedDate] = useState('2025-12-01');
 
   const getMinDate = () => {
-    const date = new Date();
-    date.setDate(date.getDate() - 30);
-    return date.toISOString().split('T')[0];
+    return '2025-11-01';  // Test data starts from Nov 2025
   };
 
   const getMaxDate = () => {
-    return new Date().toISOString().split('T')[0];
+    return '2025-12-31';  // Test data ends Dec 2025
   };
 
   const formatDate = (dateString: string) => {

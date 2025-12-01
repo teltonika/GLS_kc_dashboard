@@ -25,13 +25,11 @@ export default function AgentPerformance() {
   const [loading, setLoading] = useState(true);
 
   const getMinDate = () => {
-    const date = new Date();
-    date.setDate(date.getDate() - 30);
-    return date.toISOString().split('T')[0];
+    return '2025-11-01';  // Test data starts from Nov 2025
   };
 
   const getMaxDate = () => {
-    return new Date().toISOString().split('T')[0];
+    return '2025-12-31';  // Test data ends Dec 2025
   };
 
   useEffect(() => {

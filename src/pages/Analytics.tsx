@@ -162,7 +162,7 @@ export default function Analytics() {
         </div>
 
         <div className="bg-[#111217] border border-[#2a2c36] rounded p-5">
-          <h2 className="text-base font-medium text-white mb-4">Vrhunske ure</h2>
+          <h2 className="text-base font-medium text-white mb-4">Zasedenost po urah</h2>
           <div className="space-y-3">
             {peakHours.map((hour, index) => (
               <div key={index} className="space-y-2">
@@ -184,7 +184,7 @@ export default function Analytics() {
 
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-[#111217] border border-[#2a2c36] rounded p-5">
-          <h3 className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">Povprečni odzivni čas</h3>
+          <h3 className="text-xs font-medium text-gray-400 mb-2 uppercase tracking-wider">Povp. čas čakanja stranke</h3>
           <p className="text-2xl font-semibold text-white mb-2">{responseTime.seconds}s</p>
           <div className="flex items-center gap-1 text-green-400 text-xs">
             <TrendingDown size={14} />
