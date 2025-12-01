@@ -23,13 +23,11 @@ export default function Overview() {
   const [selectedDate, setSelectedDate] = useState('2025-12-01');
 
   const getMinDate = () => {
-    const date = new Date();
-    date.setDate(date.getDate() - 30);
-    return date.toISOString().split('T')[0];
+    return '2025-11-01';
   };
 
   const getMaxDate = () => {
-    return new Date().toISOString().split('T')[0];
+    return '2025-12-31';
   };
 
   const formatDate = (dateString: string) => {
@@ -44,6 +42,7 @@ export default function Overview() {
 
   useEffect(() => {
     async function loadData() {
+      console.log('Loading data for date:', selectedDate);
       setLoading(true);
       try {
         const [statsData, hourly, response, agents] = await Promise.all([

@@ -25,13 +25,11 @@ export default function AgentPerformance() {
   const [loading, setLoading] = useState(true);
 
   const getMinDate = () => {
-    const date = new Date();
-    date.setDate(date.getDate() - 30);
-    return date.toISOString().split('T')[0];
+    return '2025-11-01';
   };
 
   const getMaxDate = () => {
-    return new Date().toISOString().split('T')[0];
+    return '2025-12-31';
   };
 
   useEffect(() => {
@@ -48,6 +46,7 @@ export default function AgentPerformance() {
 
   useEffect(() => {
     async function loadData() {
+      console.log('Loading data for date:', selectedDate, 'agent:', selectedAgent);
       setLoading(true);
       try {
         const [statsData, volume, metricsData, breakdownData] = await Promise.all([

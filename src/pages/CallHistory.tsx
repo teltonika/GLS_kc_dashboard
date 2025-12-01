@@ -15,13 +15,11 @@ export default function CallHistory() {
   });
 
   const getMinDate = () => {
-    const date = new Date();
-    date.setDate(date.getDate() - 30);
-    return date.toISOString().split('T')[0];
+    return '2025-11-01';
   };
 
   const getMaxDate = () => {
-    return new Date().toISOString().split('T')[0];
+    return '2025-12-31';
   };
 
   useEffect(() => {
@@ -38,6 +36,7 @@ export default function CallHistory() {
 
   useEffect(() => {
     async function loadData() {
+      console.log('Loading data for date:', filters.date);
       setLoading(true);
       try {
         const result = await getCallHistory(filters);
@@ -144,7 +143,7 @@ export default function CallHistory() {
               <tr className="border-b border-[#2a2c36]">
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Čas</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Od</th>
-                <th className="px-5 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Za</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Stranka</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Agent</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Tip</th>
                 <th className="px-5 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Trajanje</th>
