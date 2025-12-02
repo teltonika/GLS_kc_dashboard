@@ -149,6 +149,7 @@ export async function getCallsByHour(period: string = 'today'): Promise<HourlyDa
     .select('time_start, call_type')
     .gte('time_start', start)
     .lte('time_start', end)
+    .not('call_type', 'is', null)  // Filter out null call_types
 
   if (error) throw error
 
@@ -159,7 +160,7 @@ export async function getCallsByHour(period: string = 'today'): Promise<HourlyDa
 
   data?.forEach(record => {
     const hour = new Date(record.time_start).getHours()
-    if (hour >= 8 && hour <= 17) {
+    if (hour >= 8 && hour <= 17 && record.call_type) {
       if (record.call_type === 'Inbound') hourly[hour].dohodni++
       else if (record.call_type === 'Internal') hourly[hour].interni++
       else if (record.call_type === 'Outbound') hourly[hour].odhodni++
@@ -167,8 +168,10 @@ export async function getCallsByHour(period: string = 'today'): Promise<HourlyDa
   })
 
   return Object.entries(hourly).map(([hour, counts]) => ({
-    hour: `${hour.padStart(2, '0')}:00`,
-    ...counts,
+    hour: `${hour.toString().padStart(2, '0')}:00`,
+    dohodni: counts.dohodni || 0,
+    interni: counts.interni || 0,
+    odhodni: counts.odhodni || 0,
   }))
 }
 
@@ -203,7 +206,7 @@ export async function getResponseTimeTrend(period: string = 'today'): Promise<Re
   })
 
   return Object.entries(hourly).map(([hour, times]) => ({
-    time: `${hour.padStart(2, '0')}:00`,
+    time: `${hour.toString().padStart(2, '0')}:00`,
     value: times.length > 0 ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : 0,
   }))
 }

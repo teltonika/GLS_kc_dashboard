@@ -22,7 +22,7 @@ export default function Overview() {
   const [responseData, setResponseData] = useState<ResponseTimeData[]>([]);
   const [agentData, setAgentData] = useState<AgentStats[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState('2025-12-01');
+  const [selectedDate, setSelectedDate] = useState('2025-12-01');  // Default to date with data
   const [availableDates, setAvailableDates] = useState<string[]>([]);
 
   const getMinDate = () => {
@@ -149,7 +149,7 @@ export default function Overview() {
         <div className="bg-[#111217] border border-[#2a2c36] rounded p-5">
           <h2 className="text-base font-medium text-white mb-4">Klici po tipih</h2>
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={hourlyData} barCategoryGap="5%">
+            <BarChart data={hourlyData.filter(h => h.dohodni > 0 || h.odhodni > 0 || h.interni > 0)} barCategoryGap="5%">
               <CartesianGrid strokeDasharray="3 3" stroke="#2a2c36" vertical={false} />
               <XAxis dataKey="hour" stroke="#6b7280" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
               <YAxis stroke="#6b7280" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
@@ -166,9 +166,9 @@ export default function Overview() {
                 wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
                 iconType="circle"
               />
-              <Bar dataKey="dohodni" stackId="a" fill="#3B82F6" name="Dohodni" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="odhodni" stackId="a" fill="#10B981" name="Odhodni" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="interni" stackId="a" fill="#F59E0B" name="Interni" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="dohodni" stackId="a" fill="#3B82F6" name="Dohodni" background={{ fill: 'transparent' }} />
+              <Bar dataKey="interni" stackId="a" fill="#F59E0B" name="Interni" background={{ fill: 'transparent' }} />
+              <Bar dataKey="odhodni" stackId="a" fill="#10B981" name="Odhodni" background={{ fill: 'transparent' }} />
             </BarChart>
           </ResponsiveContainer>
         </div>
