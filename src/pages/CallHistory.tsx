@@ -15,6 +15,7 @@ export default function CallHistory() {
     type: 'all',
     status: 'all',
     page: 1,
+    limit: 10,
   });
 
   const getMinDate = () => {
@@ -219,8 +220,22 @@ export default function CallHistory() {
 
         {data && data.total > 0 && (
           <div className="px-5 py-4 border-t border-[#2a2c36] flex items-center justify-between">
-            <div className="text-sm text-gray-400">
-              Prikazujem {((filters.page - 1) * 10) + 1} do {Math.min(filters.page * 10, data.total)} od {data.total} klicev
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-gray-400">
+                Prikazujem {((filters.page - 1) * filters.limit) + 1} do {Math.min(filters.page * filters.limit, data.total)} od {data.total} klicev
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-400">Prikaži:</span>
+                <select
+                  value={filters.limit}
+                  onChange={(e) => setFilters(prev => ({ ...prev, limit: Number(e.target.value), page: 1 }))}
+                  className="appearance-none bg-[#1a1c23] border border-[#2a2c36] text-white rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value={10}>10</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
             </div>
             <div className="flex gap-2">
               <button
