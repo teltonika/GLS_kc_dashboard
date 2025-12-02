@@ -1,6 +1,25 @@
 import { useState, useEffect } from 'react';
 import { Phone, PhoneCall, PhoneMissed, Clock } from 'lucide-react';
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip as ChartTooltip,
+  Legend as ChartLegend,
+} from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  ChartTooltip,
+  ChartLegend
+);
 import StatCard from '../components/StatCard';
 import GaugeCard from '../components/GaugeCard';
 import DatePicker from '../components/DatePicker';
@@ -148,29 +167,64 @@ export default function Overview() {
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="bg-[#111217] border border-[#2a2c36] rounded p-5">
           <h2 className="text-base font-medium text-white mb-4">Klici po tipih</h2>
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={hourlyData.filter(h => h.dohodni > 0 || h.odhodni > 0 || h.interni > 0)} barCategoryGap="5%">
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2c36" vertical={false} />
-              <XAxis dataKey="hour" stroke="#6b7280" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
-              <YAxis stroke="#6b7280" style={{ fontSize: '11px' }} tick={{ fill: '#9ca3af' }} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#1a1c23',
-                  border: '1px solid #2a2c36',
-                  borderRadius: '6px',
-                  color: '#fff',
-                  fontSize: '12px'
-                }}
-              />
-              <Legend
-                wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
-                iconType="circle"
-              />
-              <Bar dataKey="dohodni" stackId="a" fill="#3B82F6" name="Dohodni" background={{ fill: 'transparent' }} />
-              <Bar dataKey="interni" stackId="a" fill="#F59E0B" name="Interni" background={{ fill: 'transparent' }} />
-              <Bar dataKey="odhodni" stackId="a" fill="#10B981" name="Odhodni" background={{ fill: 'transparent' }} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div style={{ height: 280 }}>
+            <Bar
+              data={{
+                labels: hourlyData.map(h => h.hour),
+                datasets: [
+                  {
+                    label: 'Dohodni',
+                    data: hourlyData.map(h => h.dohodni),
+                    backgroundColor: '#3B82F6',
+                  },
+                  {
+                    label: 'Interni',
+                    data: hourlyData.map(h => h.interni),
+                    backgroundColor: '#F59E0B',
+                  },
+                  {
+                    label: 'Odhodni',
+                    data: hourlyData.map(h => h.odhodni),
+                    backgroundColor: '#10B981',
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: {
+                    position: 'bottom' as const,
+                    labels: {
+                      color: '#9ca3af',
+                      usePointStyle: true,
+                      pointStyle: 'circle',
+                      font: { size: 11 },
+                    },
+                  },
+                  tooltip: {
+                    backgroundColor: '#1a1c23',
+                    borderColor: '#2a2c36',
+                    borderWidth: 1,
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                  },
+                },
+                scales: {
+                  x: {
+                    stacked: true,
+                    grid: { display: false },
+                    ticks: { color: '#9ca3af', font: { size: 11 } },
+                  },
+                  y: {
+                    stacked: true,
+                    grid: { color: '#2a2c36' },
+                    ticks: { color: '#9ca3af', font: { size: 11 } },
+                  },
+                },
+              }}
+            />
+          </div>
         </div>
 
         <div className="bg-[#111217] border border-[#2a2c36] rounded p-5">
