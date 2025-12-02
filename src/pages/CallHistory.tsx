@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, Download } from 'lucide-react';
 import DatePicker from '../components/DatePicker';
-import { getCallHistory, getAgentList, getAvailableDates, type CallHistoryResult } from '../lib/api';
+import { getCallHistory, getAgentList, getAvailableDates, exportCallsToCSV, type CallHistoryResult } from '../lib/api';
 
 export default function CallHistory() {
   const [agents, setAgents] = useState<string[]>([]);
   const [data, setData] = useState<CallHistoryResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [filters, setFilters] = useState({
     date: '2025-12-01',
@@ -59,6 +60,34 @@ export default function CallHistory() {
     setFilters(prev => ({ ...prev, [key]: value, page: key === 'page' ? value : 1 }));
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const csv = await exportCallsToCSV({
+        date: filters.date,
+        agent: filters.agent,
+        type: filters.type,
+        status: filters.status,
+      });
+      
+      // Create blob and download
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `klici_${filters.date}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Napaka pri izvozu:', error);
+      alert('Napaka pri izvozu CSV datoteke');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     if (status === 'ODGOVORJEN') return 'text-green-400';
     if (status === 'NI ODGOVORA') return 'text-red-400';
@@ -79,9 +108,13 @@ export default function CallHistory() {
       <div className="mb-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold text-white">Zgodovina klicev</h1>
-          <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors">
+          <button 
+            onClick={handleExport}
+            disabled={exporting || !data?.records.length}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed text-white px-4 py-2 rounded text-sm transition-colors"
+          >
             <Download size={16} />
-            Izvozi CSV
+            {exporting ? 'Izvažam...' : 'Izvozi CSV'}
           </button>
         </div>
 

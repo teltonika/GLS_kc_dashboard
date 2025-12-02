@@ -717,3 +717,73 @@ export async function getAvailableDates(): Promise<string[]> {
   const dates = new Set(data?.map(r => r.time_start.split('T')[0]) || [])
   return Array.from(dates).sort()
 }
+
+// ============================================
+// EXPORT TO CSV
+// ============================================
+
+export async function exportCallsToCSV(filters: {
+  date?: string
+  agent?: string
+  type?: string
+  status?: string
+}): Promise<string> {
+  let query = supabase
+    .from('cdr_records')
+    .select('*')
+    .order('time_start', { ascending: false })
+
+  if (filters.date) {
+    const { start, end } = getDateRange(filters.date)
+    query = query.gte('time_start', start).lte('time_start', end)
+  }
+
+  if (filters.agent && filters.agent !== 'all') {
+    query = query.eq('extension', filters.agent)
+  }
+
+  if (filters.type && filters.type !== 'all') {
+    const typeMap: Record<string, string> = {
+      'Dohodni': 'Inbound',
+      'Odhodni': 'Outbound',
+      'Interni': 'Internal',
+    }
+    query = query.eq('call_type', typeMap[filters.type] || filters.type)
+  }
+
+  if (filters.status && filters.status !== 'all') {
+    const statusMap: Record<string, string> = {
+      'ODGOVORJEN': 'ANSWERED',
+      'NI ODGOVORA': 'NO ANSWER',
+      'ZAMUJEN': 'NO ANSWER',
+    }
+    query = query.eq('call_status', statusMap[filters.status] || filters.status)
+  }
+
+  const { data, error } = await query
+
+  if (error) throw error
+
+  // CSV header
+  const headers = ['Čas', 'Od', 'Stranka', 'Agent', 'Tip', 'Trajanje (s)', 'Status']
+  
+  // CSV rows
+  const rows = data?.map(r => [
+    new Date(r.time_start).toLocaleString('sl-SI'),
+    r.caller_number || '',
+    r.callee_number || '',
+    r.extension || '',
+    translateCallType(r.call_type),
+    r.talk_duration || 0,
+    translateStatus(r.call_status),
+  ]) || []
+
+  // Combine with proper CSV escaping
+  const csvContent = [
+    headers.join(';'),
+    ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
+  ].join('\n')
+
+  // Add BOM for Excel UTF-8 compatibility
+  return '\uFEFF' + csvContent
+}
