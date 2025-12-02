@@ -3,11 +3,13 @@ import { Phone, PhoneCall, PhoneMissed, Clock } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import StatCard from '../components/StatCard';
 import GaugeCard from '../components/GaugeCard';
+import DatePicker from '../components/DatePicker';
 import {
   getOverviewStats,
   getCallsByHour,
   getResponseTimeTrend,
   getAgentStats,
+  getAvailableDates,
   type OverviewStats,
   type HourlyData,
   type ResponseTimeData,
@@ -21,6 +23,7 @@ export default function Overview() {
   const [agentData, setAgentData] = useState<AgentStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState('2025-12-01');
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
 
   const getMinDate = () => {
     return '2025-11-01';  // Test data starts from Nov 2025
@@ -39,6 +42,18 @@ export default function Overview() {
       day: 'numeric'
     });
   };
+
+  useEffect(() => {
+    async function loadAvailableDates() {
+      try {
+        const dates = await getAvailableDates();
+        setAvailableDates(dates);
+      } catch (error) {
+        console.error('Napaka pri nalaganju datumov:', error);
+      }
+    }
+    loadAvailableDates();
+  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -88,13 +103,12 @@ export default function Overview() {
             <p className="text-sm text-gray-400">{formatDate(selectedDate)}</p>
           </div>
           <div>
-            <input
-              type="date"
+            <DatePicker
               value={selectedDate}
-              min={getMinDate()}
-              max={getMaxDate()}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-[#111217] border border-[#2a2c36] text-white rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              onChange={setSelectedDate}
+              activeDates={availableDates}
+              minDate={getMinDate()}
+              maxDate={getMaxDate()}
             />
           </div>
         </div>

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, Download } from 'lucide-react';
-import { getCallHistory, getAgentList, type CallHistoryResult } from '../lib/api';
+import DatePicker from '../components/DatePicker';
+import { getCallHistory, getAgentList, getAvailableDates, type CallHistoryResult } from '../lib/api';
 
 export default function CallHistory() {
   const [agents, setAgents] = useState<string[]>([]);
   const [data, setData] = useState<CallHistoryResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [filters, setFilters] = useState({
     date: '2025-12-01',
     agent: 'all',
@@ -23,15 +25,19 @@ export default function CallHistory() {
   };
 
   useEffect(() => {
-    async function loadAgents() {
+    async function loadInitialData() {
       try {
-        const agentList = await getAgentList();
+        const [agentList, dates] = await Promise.all([
+          getAgentList(),
+          getAvailableDates()
+        ]);
         setAgents(agentList);
+        setAvailableDates(dates);
       } catch (error) {
-        console.error('Napaka pri nalaganju agentov:', error);
+        console.error('Napaka pri nalaganju podatkov:', error);
       }
     }
-    loadAgents();
+    loadInitialData();
   }, []);
 
   useEffect(() => {
@@ -80,16 +86,13 @@ export default function CallHistory() {
         </div>
 
         <div className="flex gap-4 flex-wrap">
-          <div>
-            <input
-              type="date"
-              value={filters.date}
-              min={getMinDate()}
-              max={getMaxDate()}
-              onChange={(e) => updateFilter('date', e.target.value)}
-              className="bg-[#111217] border border-[#2a2c36] text-white rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
+          <DatePicker
+            value={filters.date}
+            onChange={(date) => updateFilter('date', date)}
+            activeDates={availableDates}
+            minDate={getMinDate()}
+            maxDate={getMaxDate()}
+          />
 
           <div className="relative">
             <select

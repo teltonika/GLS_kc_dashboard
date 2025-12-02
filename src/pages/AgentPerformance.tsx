@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import StatCard from '../components/StatCard';
+import DatePicker from '../components/DatePicker';
 import { ChevronDown } from 'lucide-react';
 import {
   getPerformanceStats,
@@ -8,6 +9,7 @@ import {
   getEfficiencyMetrics,
   getDailyBreakdown,
   getAgentList,
+  getAvailableDates,
   type PerformanceStats,
   type DailyVolumeData,
   type EfficiencyMetrics,
@@ -18,6 +20,7 @@ export default function AgentPerformance() {
   const [selectedAgent, setSelectedAgent] = useState('all');
   const [selectedDate, setSelectedDate] = useState('2025-12-01');
   const [agents, setAgents] = useState<string[]>([]);
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [stats, setStats] = useState<PerformanceStats | null>(null);
   const [volumeData, setVolumeData] = useState<DailyVolumeData[]>([]);
   const [metrics, setMetrics] = useState<EfficiencyMetrics | null>(null);
@@ -33,15 +36,19 @@ export default function AgentPerformance() {
   };
 
   useEffect(() => {
-    async function loadAgents() {
+    async function loadInitialData() {
       try {
-        const agentList = await getAgentList();
+        const [agentList, dates] = await Promise.all([
+          getAgentList(),
+          getAvailableDates()
+        ]);
         setAgents(agentList);
+        setAvailableDates(dates);
       } catch (error) {
-        console.error('Napaka pri nalaganju agentov:', error);
+        console.error('Napaka pri nalaganju podatkov:', error);
       }
     }
-    loadAgents();
+    loadInitialData();
   }, []);
 
   useEffect(() => {
@@ -103,16 +110,13 @@ export default function AgentPerformance() {
             <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none" size={16} />
           </div>
 
-          <div>
-            <input
-              type="date"
-              value={selectedDate}
-              min={getMinDate()}
-              max={getMaxDate()}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-[#111217] border border-[#2a2c36] text-white rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
+          <DatePicker
+            value={selectedDate}
+            onChange={setSelectedDate}
+            activeDates={availableDates}
+            minDate={getMinDate()}
+            maxDate={getMaxDate()}
+          />
         </div>
       </div>
 

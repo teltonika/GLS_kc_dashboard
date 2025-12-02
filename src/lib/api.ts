@@ -701,3 +701,19 @@ export async function getAverageResponseTime(): Promise<{ seconds: number; trend
     trend: '2.3s hitreje',
   }
 }
+
+// ============================================
+// AVAILABLE DATES FOR DATEPICKER
+// ============================================
+
+export async function getAvailableDates(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('cdr_records')
+    .select('time_start')
+    .order('time_start', { ascending: true })
+
+  if (error) throw error
+
+  const dates = new Set(data?.map(r => r.time_start.split('T')[0]) || [])
+  return Array.from(dates).sort()
+}
