@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, Download } from 'lucide-react';
+import { ChevronDown, Download, Calendar } from 'lucide-react';
 import DatePicker from '../components/DatePicker';
 import { getCallHistory, getAgentList, getAvailableDates, exportCallsToCSV, type CallHistoryResult } from '../lib/api';
 
@@ -17,6 +17,12 @@ export default function CallHistory() {
     page: 1,
     limit: 10,
   });
+
+  // Export settings
+  const [exportRange, setExportRange] = useState('today');
+  const [customStartDate, setCustomStartDate] = useState('2025-11-25');
+  const [customEndDate, setCustomEndDate] = useState('2025-12-01');
+  const [showExportModal, setShowExportModal] = useState(false);
 
   const getMinDate = () => {
     return '2025-11-01';  // Test data starts from Nov 2025
@@ -61,11 +67,47 @@ export default function CallHistory() {
     setFilters(prev => ({ ...prev, [key]: value, page: key === 'page' ? value : 1 }));
   };
 
+  const getExportDateRange = () => {
+    const today = '2025-12-01'; // Using test data date
+    
+    switch (exportRange) {
+      case 'today':
+        return { startDate: today, endDate: today };
+      case 'yesterday':
+        return { startDate: '2025-11-28', endDate: '2025-11-28' };
+      case 'thisWeek':
+        return { startDate: '2025-11-25', endDate: '2025-12-01' };
+      case 'thisMonth':
+        return { startDate: '2025-11-01', endDate: '2025-11-30' };
+      case 'last30':
+        return { startDate: '2025-11-01', endDate: '2025-12-01' };
+      case 'custom':
+        return { startDate: customStartDate, endDate: customEndDate };
+      default:
+        return { startDate: today, endDate: today };
+    }
+  };
+
+  const getExportRangeLabel = () => {
+    const labels: Record<string, string> = {
+      'today': 'Danes',
+      'yesterday': 'Včeraj',
+      'thisWeek': 'Ta teden',
+      'thisMonth': 'Ta mesec',
+      'last30': 'Zadnjih 30 dni',
+      'custom': 'Po meri',
+    };
+    return labels[exportRange] || 'Danes';
+  };
+
   const handleExport = async () => {
     setExporting(true);
     try {
+      const { startDate, endDate } = getExportDateRange();
+      
       const csv = await exportCallsToCSV({
-        date: filters.date,
+        startDate,
+        endDate,
         agent: filters.agent,
         type: filters.type,
         status: filters.status,
@@ -76,11 +118,18 @@ export default function CallHistory() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `klici_${filters.date}.csv`;
+      
+      // Filename with date range
+      const filename = startDate === endDate 
+        ? `klici_${startDate}.csv`
+        : `klici_${startDate}_do_${endDate}.csv`;
+      link.download = filename;
+      
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      setShowExportModal(false);
     } catch (error) {
       console.error('Napaka pri izvozu:', error);
       alert('Napaka pri izvozu CSV datoteke');
@@ -110,12 +159,11 @@ export default function CallHistory() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-semibold text-white">Zgodovina klicev</h1>
           <button 
-            onClick={handleExport}
-            disabled={exporting || !data?.records.length}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed text-white px-4 py-2 rounded text-sm transition-colors"
+            onClick={() => setShowExportModal(true)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors"
           >
             <Download size={16} />
-            {exporting ? 'Izvažam...' : 'Izvozi CSV'}
+            Izvozi CSV
           </button>
         </div>
 
@@ -259,6 +307,81 @@ export default function CallHistory() {
           </div>
         )}
       </div>
+
+      {/* Export Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#111217] border border-[#2a2c36] rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-lg font-semibold text-white mb-4">Izvozi klice</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Časovno obdobje</label>
+                <select
+                  value={exportRange}
+                  onChange={(e) => setExportRange(e.target.value)}
+                  className="w-full appearance-none bg-[#1a1c23] border border-[#2a2c36] text-white rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="today">Danes</option>
+                  <option value="yesterday">Včeraj</option>
+                  <option value="thisWeek">Ta teden</option>
+                  <option value="thisMonth">Ta mesec</option>
+                  <option value="last30">Zadnjih 30 dni</option>
+                  <option value="custom">Po meri...</option>
+                </select>
+              </div>
+
+              {exportRange === 'custom' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Od</label>
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                      min={getMinDate()}
+                      max={getMaxDate()}
+                      className="w-full bg-[#1a1c23] border border-[#2a2c36] text-white rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-2">Do</label>
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                      min={getMinDate()}
+                      max={getMaxDate()}
+                      className="w-full bg-[#1a1c23] border border-[#2a2c36] text-white rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="text-sm text-gray-400">
+                Filtri: {filters.agent === 'all' ? 'Vsi agenti' : filters.agent}, {filters.type === 'all' ? 'Vsi tipi' : filters.type}, {filters.status === 'all' ? 'Vsi statusi' : filters.status}
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="flex-1 px-4 py-2 bg-[#1a1c23] border border-[#2a2c36] text-white rounded text-sm hover:bg-[#2a2c36] transition-colors"
+              >
+                Prekliči
+              </button>
+              <button
+                onClick={handleExport}
+                disabled={exporting}
+                className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white px-4 py-2 rounded text-sm transition-colors"
+              >
+                <Download size={16} />
+                {exporting ? 'Izvažam...' : 'Izvozi'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

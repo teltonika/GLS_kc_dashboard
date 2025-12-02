@@ -723,6 +723,8 @@ export async function getAvailableDates(): Promise<string[]> {
 // ============================================
 
 export async function exportCallsToCSV(filters: {
+  startDate?: string
+  endDate?: string
   date?: string
   agent?: string
   type?: string
@@ -733,7 +735,12 @@ export async function exportCallsToCSV(filters: {
     .select('*')
     .order('time_start', { ascending: false })
 
-  if (filters.date) {
+  // Support both single date and date range
+  if (filters.startDate && filters.endDate) {
+    query = query
+      .gte('time_start', `${filters.startDate}T00:00:00`)
+      .lte('time_start', `${filters.endDate}T23:59:59`)
+  } else if (filters.date) {
     const { start, end } = getDateRange(filters.date)
     query = query.gte('time_start', start).lte('time_start', end)
   }
